@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: vg-ms-user-performance-test
+  mail:
+    # Configuración completamente deshabilitada para performance
+    host: localhost
+    port: 25
+    username: performance@mock.com
+    password: mockpassword
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+    test-connection: false
+
+# Configuración optimizada para pruebas de rendimiento
+keycloak:
+  enabled: false
+  server-url: "http://localhost:9999"  # Puerto inexistente
+  realm-name: "performance-realm"
+  realm-master: "master"
+  admin-cli: "admin-cli"
+  admin-user: "performance-admin"
+  admin-password: "performance-password"
+
+# Configuración específica para performance testing
+email:
+  enabled: false
+  mock-mode: true
+  batch-size: 1000
+  performance-mode: true
+
+# Variables de optimización para pruebas de carga
+performance-test:
+  mock-external-services: true
+  disable-real-emails: true
+  enable-batch-processing: true
+  max-concurrent-operations: 1000
+  operation-timeout: 30s
+  
+# Pool de threads optimizado para pruebas de carga
+reactor:
+  schedulers:
+    parallel:
+      size: 50
+    elastic:
+      size: 200
+
+# Configuración del servidor para performance tests
+server:
+  port: 0
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 50
+    max-connections: 2000
+    accept-count: 500
+
+# Configuración de logging optimizada para performance
+logging:
+  level:
+    root: WARN
+    pe.edu.vallegrande.vgmsuser: INFO
+    pe.edu.vallegrande.vgmsuser.performance: DEBUG
+    org.springframework.web: WARN
+    org.springframework.test: WARN
+    org.springframework.mail: ERROR
+    org.keycloak: ERROR
+    org.jboss.resteasy: ERROR
+    reactor: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+
+# Configuración de memoria para pruebas intensivas
+spring.reactor:
+  debug-agent:
+    enabled: false
+  schedulers:
+    cached:
+      enabled: true

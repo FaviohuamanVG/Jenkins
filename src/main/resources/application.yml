@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: vg-ms-user
+  data:
+    # mongodb:
+    #   uri: mongodb+srv://faviohuaman:whQVhuBsOgu0C0M4@cluster0.zkqvx.mongodb.net/PRS_proyect?retryWrites=true&w=majority
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:favio.huaman@vallegrande.edu.pe}
+    password: ${EMAIL_PASSWORD:paly gksc uoxg iyqs}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    test-connection: false
+keycloak:
+  server-url: "https://lab.vallegrande.edu.pe/school/ms-keycloak"
+  realm-name: "auth-school"
+  realm-master: "master"
+  admin-cli: "admin-cli"
+  user-console: "admin"
+  password-console: "eduassist"
+  client-secret: "moK3cebe2pBmxckugtkFVkDoNLm1D8iV"
+server:
+  port: 8100
+
+# Configuración de microservicios externos
+app:
+  services:
+    institution:
+      base-url: ${INSTITUTION_SERVICE_URL:http://michaellibarra-vg-ms-institution:8101}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000/school}

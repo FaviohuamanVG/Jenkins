@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: vg-ms-user-test
+  mail:
+    # Configuración mock para emails en pruebas
+    host: localhost
+    port: 25
+    username: test@example.com
+    password: testpassword
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+    test-connection: false
+
+# Deshabilitar completamente Keycloak para pruebas
+keycloak:
+  enabled: false
+  server-url: "http://localhost:9999"  # Puerto inexistente para forzar error si se usa
+  realm-name: "test-realm"
+  realm-master: "master"  
+  admin-cli: "admin-cli"
+  admin-user: "test-admin"
+  admin-password: "test-password"
+
+# Configuración de mocking 
+email:
+  enabled: false
+  mock-mode: true
+
+# Variables de configuración para evitar llamadas externas
+external-services:
+  enabled: false
+
+# Configuración del servidor para tests
+server:
+  port: 0
+
+# Configuración de logging para tests
+logging:
+  level:
+    root: WARN
+    pe.edu.vallegrande.vgmsuser: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.test: DEBUG
+    org.springframework.mail: ERROR
+    org.keycloak: ERROR
+    org.jboss.resteasy: ERROR
