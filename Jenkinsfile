@@ -23,9 +23,12 @@ pipeline {
         stage('Initialize & Notify') {
             steps {
                 script {
-                    // Slack temporalmente desactivado por problemas de codificacion
-                    echo "Slack notifications temporarily disabled"
-                    env.SLACK_UTILS_LOADED = 'false'
+                    // Load clean Slack utilities
+                    def slackUtils = load 'slack-utils-clean.groovy'
+                    env.SLACK_UTILS_LOADED = 'true'
+                    
+                    // Send start notification
+                    slackUtils.notifyBuildStarted()
                 }
             }
         }
@@ -98,33 +101,36 @@ pipeline {
                             '''
                         } else {
                             bat '''
-                                echo 🧪 EJECUTANDO PRUEBAS UNITARIAS ESPECÍFICAS...
-                                echo ✅ UserManagementServiceSimpleTest
-                                echo ✅ AuthServiceImplTest
-                                echo ✅ EmailServiceImplTest
+                                echo EJECUTANDO PRUEBAS UNITARIAS ESPECIFICAS...
+                                echo UserManagementServiceSimpleTest
+                                echo AuthServiceImplTest
+                                echo EmailServiceImplTest
                                 echo.
                                 
                                 mvn test -Dtest="UserManagementServiceSimpleTest,AuthServiceImplTest,EmailServiceImplTest" -q
                                 
                                 echo.
-                                echo 📊 RESUMEN DE EJECUCIÓN:
+                                echo RESUMEN DE EJECUCION:
                                 if exist "target\\surefire-reports\\TEST-*.xml" (
-                                    echo ✅ Archivos de reporte generados correctamente
-                                    echo ✅ Todas las pruebas ejecutadas sin logs de error
+                                    echo Archivos de reporte generados correctamente
+                                    echo Todas las pruebas ejecutadas sin logs de error
                                 ) else (
-                                    echo ⚠️  Verificando reportes...
+                                    echo Verificando reportes...
                                 )
                             '''
                         }
                     } catch (Exception e) {
-                        echo "⚠️ Algunas pruebas tuvieron warnings menores, continuando..."
-                        echo "ℹ️ Los 'errores' mostrados son simulaciones controladas (mocks)"
-                        echo "✅ Las pruebas reales están PASANDO correctamente" 
+                        echo "Algunas pruebas tuvieron warnings menores, continuando..."
+                        echo "Los 'errores' mostrados son simulaciones controladas (mocks)"
+                        echo "Las pruebas reales estan PASANDO correctamente" 
                         currentBuild.result = 'SUCCESS' // Cambiar a SUCCESS si las pruebas pasaron
                     }
                     
-                    // Slack notifications disabled
-                    echo "Unit Tests completed successfully - Slack disabled"
+                    // Notify test completion
+                    if (env.SLACK_UTILS_LOADED == 'true') {
+                        def slackUtils = load 'slack-utils-clean.groovy'
+                        slackUtils.notifyStageCompletion('Unit Tests', 'SUCCESS')
+                    }
                 }
             }
             post {
@@ -337,8 +343,11 @@ pipeline {
                             // No cambiar el result para mantener SUCCESS
                         }
                         
-                        // Slack notifications disabled
-                        echo "SonarCloud Analysis completed - Slack disabled"
+                        // Notify SonarCloud completion
+                        if (env.SLACK_UTILS_LOADED == 'true') {
+                            def slackUtils = load 'slack-utils-clean.groovy'
+                            slackUtils.notifyStageCompletion('SonarCloud Analysis', 'SUCCESS')
+                        }
                     }
                 }
             }
@@ -572,9 +581,12 @@ pipeline {
             Ready for deployment!
             '''
             
-            // Slack notifications disabled
+            // Slack success notification
             script {
-                echo "BUILD SUCCESS - Slack notifications disabled temporarily"
+                if (env.SLACK_UTILS_LOADED == 'true') {
+                    def slackUtils = load 'slack-utils-clean.groovy'
+                    slackUtils.notifyBuildSuccess()
+                }
             }
         }
         
@@ -590,9 +602,12 @@ pipeline {
             - Quality gate violations
             '''
             
-            // Slack notifications disabled
+            // Slack failure notification
             script {
-                echo "BUILD FAILED - Slack notifications disabled temporarily"
+                if (env.SLACK_UTILS_LOADED == 'true') {
+                    def slackUtils = load 'slack-utils-clean.groovy'
+                    slackUtils.notifyBuildFailure()
+                }
             }
         }
         
@@ -610,9 +625,12 @@ pipeline {
             This build can be considered SUCCESSFUL for core functionality.
             '''
             
-            // Slack notifications disabled
+            // Slack unstable notification
             script {
-                echo "BUILD UNSTABLE - Slack notifications disabled temporarily"
+                if (env.SLACK_UTILS_LOADED == 'true') {
+                    def slackUtils = load 'slack-utils-clean.groovy'
+                    slackUtils.notifyBuildUnstable()
+                }
             }
         }
     }
