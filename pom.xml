@@ -28,6 +28,36 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        
+        <!-- SonarCloud Properties (Cloud-based, no local server needed) -->
+        <sonar.projectKey>FaviohuamanVG_Jenkins</sonar.projectKey>
+        <sonar.organization>faviohuaman</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.projectName>VG Microservice User</sonar.projectName>
+        <sonar.projectVersion>0.0.1-SNAPSHOT</sonar.projectVersion>
+        <sonar.java.source>17</sonar.java.source>
+        <sonar.java.target>17</sonar.java.target>
+        <sonar.sources>src/main/java</sonar.sources>
+        <sonar.tests>src/test/java</sonar.tests>
+        <sonar.java.binaries>target/classes</sonar.java.binaries>
+        <sonar.java.libraries>target/dependency/*.jar</sonar.java.libraries>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.junit.reportPaths>target/surefire-reports</sonar.junit.reportPaths>
+        
+        <!-- SonarCloud Quality Gate -->
+        <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+        
+        <!-- Exclude files from analysis -->
+        <sonar.exclusions>
+            **/dto/**,
+            **/config/**,
+            **/*Application.java,
+            **/target/**
+        </sonar.exclusions>
+        
+        <sonar.test.exclusions>
+            **/target/**
+        </sonar.test.exclusions>
     </properties>
     <dependencies>
         <dependency>
@@ -197,6 +227,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            
+            <!-- SonarQube Plugin for Code Quality Analysis -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
             </plugin>
         </plugins>
     </build>

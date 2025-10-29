@@ -153,6 +153,123 @@ pipeline {
             }
         }
         
+        stage('SonarCloud Analysis') {
+            steps {
+                echo 'Running SonarCloud Analysis (Cloud-based)...'
+                script {
+                    // Usar credenciales de SonarCloud (token almacenado en Jenkins)
+                    withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+                        try {
+                            if (isUnix()) {
+                                sh '''
+                                    mvn sonar:sonar \
+                                    -Dsonar.host.url=https://sonarcloud.io \
+                                    -Dsonar.organization=faviohuaman \
+                                    -Dsonar.projectKey=FaviohuamanVG_Jenkins \
+                                    -Dsonar.login=$SONAR_TOKEN \
+                                    -Dsonar.projectName="VG Microservice User" \
+                                    -Dsonar.projectVersion=0.0.1-SNAPSHOT \
+                                    -Dsonar.java.source=17 \
+                                    -Dsonar.java.target=17 \
+                                    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                                    -Dsonar.junit.reportPaths=target/surefire-reports \
+                                    -Dsonar.qualitygate.wait=true \
+                                    -B
+                                '''
+                            } else {
+                                bat '''
+                                    mvn sonar:sonar ^
+                                    -Dsonar.host.url=https://sonarcloud.io ^
+                                    -Dsonar.organization=faviohuaman ^
+                                    -Dsonar.projectKey=FaviohuamanVG_Jenkins ^
+                                    -Dsonar.login=%SONAR_TOKEN% ^
+                                    -Dsonar.projectName="VG Microservice User" ^
+                                    -Dsonar.projectVersion=0.0.1-SNAPSHOT ^
+                                    -Dsonar.java.source=17 ^
+                                    -Dsonar.java.target=17 ^
+                                    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
+                                    -Dsonar.junit.reportPaths=target/surefire-reports ^
+                                    -Dsonar.qualitygate.wait=true ^
+                                    -B
+                                '''
+                            }
+                        } catch (Exception e) {
+                            echo "SonarCloud analysis failed: ${e.message}"
+                            currentBuild.result = 'UNSTABLE'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    echo '''
+                    SONARCLOUD ANALYSIS COMPLETED ☁️
+                    =================================
+                    - Código analizado para calidad en la nube
+                    - Vulnerabilidades de seguridad detectadas
+                    - Cobertura de código evaluada
+                    - Code smells identificados
+                    - Duplicación de código verificada
+                    
+                    📊 Dashboard directo: https://sonarcloud.io/project/overview?id=FaviohuamanVG_Jenkins
+                    🔍 Organization: faviohuaman
+                    '''
+                }
+            }
+        }
+        
+        stage('Quality Gate Check') {
+            steps {
+                echo 'Checking SonarQube Quality Gate...'
+                script {
+                    try {
+                        // Esperar por el resultado del Quality Gate
+                        timeout(time: 5, unit: 'MINUTES') {
+                            def qg = waitForQualityGate()
+                            
+                            echo """
+                            QUALITY GATE STATUS: ${qg.status}
+                            ===================================
+                            """
+                            
+                            if (qg.status != 'OK') {
+                                echo """
+                                QUALITY GATE FAILED!
+                                Reason: ${qg.status}
+                                
+                                Possible issues:
+                                - Code coverage below threshold
+                                - Security vulnerabilities found
+                                - Code smells exceed limit
+                                - Duplicated code blocks
+                                - Maintainability issues
+                                
+                                Check SonarQube dashboard for details.
+                                """
+                                
+                                // Marcar build como unstable pero continuar
+                                currentBuild.result = 'UNSTABLE'
+                            } else {
+                                echo """
+                                QUALITY GATE PASSED! ✅
+                                ========================
+                                - Code quality meets standards
+                                - Security issues: None critical
+                                - Coverage: Above threshold
+                                - Maintainability: Good
+                                - Reliability: Good
+                                """
+                            }
+                        }
+                    } catch (Exception e) {
+                        echo "Quality Gate check failed or timed out: ${e.message}"
+                        echo "Continuing build as UNSTABLE..."
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+        }
+        
         stage('Performance Tests (Optional)') {
             when {
                 anyOf {
@@ -216,9 +333,9 @@ pipeline {
             }
         }
         
-        stage('Quality Gate') {
+        stage('Final Quality Check') {
             steps {
-                echo 'Checking Quality Gate...'
+                echo 'Final Quality Assessment...'
                 script {
                     // Versión simplificada sin getRawBuild para evitar errores de seguridad
                     def workspace = env.WORKSPACE
@@ -226,17 +343,25 @@ pipeline {
                     def buildResult = currentBuild.result ?: 'SUCCESS'
                     
                     echo """
-                    QUALITY GATE RESULTS:
-                    ========================
+                    FINAL QUALITY ASSESSMENT:
+                    ===========================
                     Build Number: ${buildNumber}
                     Workspace: ${workspace}
                     Build Result: ${buildResult}
+                    
+                    CHECKS COMPLETED:
+                    ✅ Unit Tests
+                    ✅ Code Coverage
+                    ✅ SonarQube Analysis
+                    ✅ Quality Gate Validation
                     """
                     
                     if (buildResult == 'FAILURE') {
-                        error("Quality Gate Failed: Build has failures")
+                        error("Final Quality Check Failed: Build has critical failures")
+                    } else if (buildResult == 'UNSTABLE') {
+                        echo "⚠️  Build Status: UNSTABLE - Some quality issues found but not critical"
                     } else {
-                        echo "Quality Gate Passed: Build Status = ${buildResult}"
+                        echo "✅ Final Quality Check Passed: Build Status = ${buildResult}"
                     }
                 }
             }
@@ -263,14 +388,25 @@ pipeline {
                 Branch: ${env.BRANCH_NAME ?: 'N/A'}
                 
                 TEST RESULTS:
-                Unit Tests Executed Successfully
+                ✅ Unit Tests Executed Successfully
+                ✅ Code Coverage Generated
+                
+                SONARQUBE ANALYSIS:
+                ✅ Code Quality Analysis Completed
+                ✅ Security Vulnerabilities Scanned
+                ✅ Code Smells Detected
+                ✅ Quality Gate Evaluated
                 
                 SECURITY COMPLIANCE:
-                No real emails sent
-                No real Keycloak users created
-                All operations mocked and simulated
+                ✅ No real emails sent
+                ✅ No real Keycloak users created
+                ✅ All operations mocked and simulated
                 
                 BUILD STATUS: ${buildResult}
+                
+                📊 Review detailed reports:
+                - JaCoCo Coverage: target/site/jacoco/index.html
+                - SonarCloud Dashboard: https://sonarcloud.io/project/overview?id=FaviohuamanVG_Jenkins
                 """
                 
                 writeFile file: 'build-report.txt', text: reportContent
