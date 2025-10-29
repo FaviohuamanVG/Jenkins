@@ -14,22 +14,22 @@ def sendSlackNotification(String status, String message = null, String color = n
         return
     }
     
-    // Colores y emojis simples
+    // Colores y simbolos simples (sin emojis para evitar problemas de codificacion)
     def statusConfig = [
-        SUCCESS: [color: '#36a64f', emoji: '✅'],
-        FAILURE: [color: '#ff0000', emoji: '❌'],
-        UNSTABLE: [color: '#ffcc00', emoji: '⚠️'],
-        STARTED: [color: '#0099cc', emoji: '🚀']
+        SUCCESS: [color: '#36a64f', emoji: '[OK]'],
+        FAILURE: [color: '#ff0000', emoji: '[FAIL]'],
+        UNSTABLE: [color: '#ffcc00', emoji: '[WARN]'],
+        STARTED: [color: '#0099cc', emoji: '[START]']
     ]
     
-    def config = statusConfig[status] ?: [color: '#808080', emoji: 'ℹ️']
+    def config = statusConfig[status] ?: [color: '#808080', emoji: '[INFO]']
     
     // Mensaje simple
     def text = "${config.emoji} *${status}*: VG User Microservice #${env.BUILD_NUMBER}"
     if (message) {
         text += "\n${message}"
     }
-    text += "\n🔗 <${env.BUILD_URL}|Ver build> | 📊 <https://sonarcloud.io/project/overview?id=FaviohuamanVG_Jenkins|SonarCloud>"
+    text += "\n<${env.BUILD_URL}|Ver build> | <https://sonarcloud.io/project/overview?id=FaviohuamanVG_Jenkins|SonarCloud>"
     
     // Payload JSON simple
     def payload = [
@@ -67,28 +67,28 @@ def sendSlackNotification(String status, String message = null, String color = n
     }
 }
 
-// Funciones simplificadas
+// Funciones simplificadas (sin emojis)
 def notifyBuildStarted() {
-    sendSlackNotification('STARTED', '🚀 Iniciando build - Tiempo estimado: 3-5 min')
+    sendSlackNotification('STARTED', 'Iniciando build - Tiempo estimado: 3-5 min')
 }
 
 def notifyBuildSuccess() {
-    sendSlackNotification('SUCCESS', '🎉 Build exitoso - 19 tests OK - Listo para deploy')
+    sendSlackNotification('SUCCESS', 'Build exitoso - 19 tests OK - Listo para deploy')
 }
 
 def notifyBuildFailure() {
-    sendSlackNotification('FAILURE', '❌ Build falló - Revisar logs - @vallegrande-dev')
+    sendSlackNotification('FAILURE', 'Build fallo - Revisar logs - @vallegrande-dev')
 }
 
 def notifyBuildUnstable() {
-    sendSlackNotification('UNSTABLE', '⚠️ Build UNSTABLE - Tests OK pero hay warnings menores')
+    sendSlackNotification('UNSTABLE', 'Build UNSTABLE - Tests OK pero hay warnings menores')
 }
 
 def notifyStageCompletion(String stageName, String status, Map details = [:]) {
     // Solo notificar etapas importantes
     def importantStages = ['Unit Tests', 'SonarCloud Analysis'] 
     if (stageName in importantStages) {
-        sendSlackNotification(status, "📋 ${stageName}: ${status}")
+        sendSlackNotification(status, "${stageName}: ${status}")
     }
 }
 
