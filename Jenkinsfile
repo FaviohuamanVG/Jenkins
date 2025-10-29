@@ -7,8 +7,8 @@ pipeline {
     }
     
     environment {
-        // Variables de entorno para el proyecto
-        MAVEN_OPTS = '-Xmx1024m -XX:MaxPermSize=256m'
+        // Variables de entorno para el proyecto - Java 17 compatible
+        MAVEN_OPTS = '-Xmx1024m -Xms512m'
         JAVA_HOME = tool('JDK-17')
         PATH = "${JAVA_HOME}/bin;${env.PATH}"
     }
