@@ -42,12 +42,38 @@ def sendSlackNotification(String status, String message = null) {
         ]]
     ]
     
-    // Send using PowerShell with proper JSON handling
+    // Send using simple JSON construction (no JsonBuilder needed)
     try {
-        def jsonBuilder = new groovy.json.JsonBuilder(payload)
-        def jsonStr = jsonBuilder.toString()
+        // Build JSON manually to avoid security restrictions
+        def duration = currentBuild.durationString ?: 'In progress'
+        def branch = env.BRANCH_NAME ?: 'main'
         
-        // Write JSON to temp file to avoid escaping issues
+        def jsonStr = """
+{
+    "channel": "${channel}",
+    "username": "Jenkins",
+    "text": "${text}",
+    "attachments": [
+        {
+            "color": "${color}",
+            "fields": [
+                {
+                    "title": "Branch",
+                    "value": "${branch}",
+                    "short": true
+                },
+                {
+                    "title": "Duration", 
+                    "value": "${duration}",
+                    "short": true
+                }
+            ]
+        }
+    ]
+}
+        """.trim()
+        
+        // Write JSON to temp file
         def tempFile = "slack-payload-${System.currentTimeMillis()}.json"
         writeFile file: tempFile, text: jsonStr
         
