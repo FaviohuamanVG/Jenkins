@@ -23,12 +23,9 @@ pipeline {
         stage('Initialize & Notify') {
             steps {
                 script {
-                    // Cargar utilidades de Slack
-                    def slackUtils = load 'jenkins-slack-utils.groovy'
-                    env.SLACK_UTILS_LOADED = 'true'
-                    
-                    // Enviar notificación de inicio
-                    slackUtils.notifyBuildStarted()
+                    // Slack temporalmente desactivado por problemas de codificacion
+                    echo "Slack notifications temporarily disabled"
+                    env.SLACK_UTILS_LOADED = 'false'
                 }
             }
         }
@@ -126,16 +123,8 @@ pipeline {
                         currentBuild.result = 'SUCCESS' // Cambiar a SUCCESS si las pruebas pasaron
                     }
                     
-                    // Notificar completación de tests
-                    if (env.SLACK_UTILS_LOADED == 'true') {
-                        def slackUtils = load 'jenkins-slack-utils.groovy'
-                        slackUtils.notifyStageCompletion('Unit Tests', 'SUCCESS', [
-                            'Tests ejecutados': '19 tests (UserManagement, Auth, Email)',
-                            'Fallos': '0',
-                            'Tiempo': '~30 segundos',
-                            'Cobertura': 'Mocks utilizados para proteger producción'
-                        ])
-                    }
+                    // Slack notifications disabled
+                    echo "Unit Tests completed successfully - Slack disabled"
                 }
             }
             post {
@@ -348,16 +337,8 @@ pipeline {
                             // No cambiar el result para mantener SUCCESS
                         }
                         
-                        // Notificar análisis de SonarCloud
-                        if (env.SLACK_UTILS_LOADED == 'true') {
-                            def slackUtils = load 'jenkins-slack-utils.groovy'
-                            slackUtils.notifyStageCompletion('SonarCloud Analysis', 'SUCCESS', [
-                                'Análisis': 'Código enviado a SonarCloud ☁️',
-                                'Organización': 'faviohuaman',
-                                'Proyecto': 'FaviohuamanVG_Jenkins',
-                                'Dashboard': 'https://sonarcloud.io/project/overview?id=FaviohuamanVG_Jenkins'
-                            ])
-                        }
+                        // Slack notifications disabled
+                        echo "SonarCloud Analysis completed - Slack disabled"
                     }
                 }
             }
@@ -413,16 +394,8 @@ pipeline {
                         // No cambiar el result para mantener SUCCESS
                     }
                     
-                    // Notificar Quality Gate
-                    if (env.SLACK_UTILS_LOADED == 'true') {
-                        def slackUtils = load 'jenkins-slack-utils.groovy' 
-                        slackUtils.notifyStageCompletion('Quality Gate Check', 'SUCCESS', [
-                            'Estado': 'Quality Gate evaluado',
-                            'Resultado': 'Análisis completado en SonarCloud',
-                            'Próximo paso': 'Revisar dashboard para detalles',
-                            'Tiempo estimado': '1-2 minutos para resultados completos'
-                        ])
-                    }
+                    // Slack notifications disabled
+                    echo "Quality Gate Check completed - Slack disabled"
                 }
             }
         }
@@ -599,31 +572,9 @@ pipeline {
             Ready for deployment!
             '''
             
-            // Notificación de éxito con Slack
+            // Slack notifications disabled
             script {
-                if (env.SLACK_UTILS_LOADED == 'true') {
-                    def slackUtils = load 'jenkins-slack-utils.groovy'
-                    slackUtils.notifyBuildSuccess()
-                    
-                    // Notificación especial para rama main
-                    if (env.BRANCH_NAME == 'main') {
-                        slackUtils.sendSlackNotification('SUCCESS', """
-                        🚀 **DEPLOYMENT READY - RAMA MAIN**
-                        
-                        ✅ **Build #${env.BUILD_NUMBER} completado exitosamente**
-                        
-                        📋 **Resumen completo:**
-                        • 19 unit tests ejecutados ✅
-                        • Cobertura de código generada ✅  
-                        • SonarCloud analysis completado ✅
-                        • Quality gates aprobados ✅
-                        • Artefactos empaquetados ✅
-                        
-                        🎯 **Siguiente paso:** Deployment a producción
-                        👥 **Notificar a:** ${env.TEAM_MENTION}
-                        """, '#36a64f')
-                    }
-                }
+                echo "BUILD SUCCESS - Slack notifications disabled temporarily"
             }
         }
         
@@ -639,32 +590,9 @@ pipeline {
             - Quality gate violations
             '''
             
-            // Notificación de fallo con Slack
+            // Slack notifications disabled
             script {
-                if (env.SLACK_UTILS_LOADED == 'true') {
-                    def slackUtils = load 'jenkins-slack-utils.groovy'
-                    slackUtils.notifyBuildFailure()
-                    
-                    // Notificación de urgencia para rama main
-                    if (env.BRANCH_NAME == 'main') {
-                        slackUtils.sendSlackNotification('FAILURE', """
-                        🚨 **FALLO CRÍTICO EN RAMA MAIN** 🚨
-                        
-                        ❌ **Build #${env.BUILD_NUMBER} FALLÓ**
-                        
-                        🔥 **ATENCIÓN INMEDIATA REQUERIDA**
-                        👥 **Equipo:** ${env.TEAM_MENTION}
-                        
-                        🔍 **Acciones urgentes:**
-                        • Revisar logs inmediatamente
-                        • Identificar causa raíz
-                        • Aplicar hotfix si es necesario
-                        • Comunicar estado al equipo
-                        
-                        ⏰ **Tiempo de respuesta esperado:** 15 minutos
-                        """, '#ff0000')
-                    }
-                }
+                echo "BUILD FAILED - Slack notifications disabled temporarily"
             }
         }
         
@@ -682,12 +610,9 @@ pipeline {
             This build can be considered SUCCESSFUL for core functionality.
             '''
             
-            // Notificación de build inestable con Slack
+            // Slack notifications disabled
             script {
-                if (env.SLACK_UTILS_LOADED == 'true') {
-                    def slackUtils = load 'jenkins-slack-utils.groovy'
-                    slackUtils.notifyBuildUnstable()
-                }
+                echo "BUILD UNSTABLE - Slack notifications disabled temporarily"
             }
         }
     }
