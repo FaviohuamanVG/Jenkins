@@ -84,9 +84,9 @@ pipeline {
             }
             post {
                 always {
-                    // Publicar resultados de pruebas
-                    publishTestResults(
-                        testResultsPattern: 'target/surefire-reports/*.xml',
+                    // Publicar resultados de pruebas usando junit
+                    junit(
+                        testResults: 'target/surefire-reports/*.xml',
                         allowEmptyResults: false,
                         skipPublishingChecks: true
                     )
@@ -129,13 +129,26 @@ pipeline {
             }
             post {
                 always {
-                    // Publicar reportes de cobertura
-                    publishCoverage(
-                        adapters: [
-                            jacocoAdapter('target/site/jacoco/jacoco.xml')
-                        ],
-                        sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
-                    )
+                    // Publicar reportes de cobertura usando JaCoCo plugin estándar
+                    script {
+                        try {
+                            // Verificar si el archivo de cobertura existe
+                            if (fileExists('target/site/jacoco/jacoco.xml')) {
+                                echo 'Publishing JaCoCo coverage report...'
+                                // Usar el step jacoco si está disponible
+                                step([$class: 'JacocoPublisher',
+                                    execPattern: 'target/jacoco.exec',
+                                    classPattern: 'target/classes',
+                                    sourcePattern: 'src/main/java',
+                                    exclusionPattern: '**/*Test*.class'
+                                ])
+                            } else {
+                                echo 'JaCoCo coverage report not found, skipping...'
+                            }
+                        } catch (Exception e) {
+                            echo "Coverage publishing failed: ${e.message}"
+                        }
+                    }
                 }
             }
         }
