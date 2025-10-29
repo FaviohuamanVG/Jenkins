@@ -42,16 +42,25 @@ def sendSlackNotification(String status, String message = null) {
         ]]
     ]
     
-    // Send using PowerShell
+    // Send using PowerShell with proper JSON handling
     try {
-        def jsonStr = groovy.json.JsonBuilder(payload).toString()
-        // Escape quotes for PowerShell
-        jsonStr = jsonStr.replace('"', '\\"')
+        def jsonBuilder = new groovy.json.JsonBuilder(payload)
+        def jsonStr = jsonBuilder.toString()
+        
+        // Write JSON to temp file to avoid escaping issues
+        def tempFile = "slack-payload-${System.currentTimeMillis()}.json"
+        writeFile file: tempFile, text: jsonStr
         
         if (isUnix()) {
-            sh "curl -X POST -H 'Content-type: application/json' -d '${jsonStr}' ${webhook}"
+            sh """
+                curl -X POST -H 'Content-type: application/json' --data @${tempFile} ${webhook}
+                rm ${tempFile}
+            """
         } else {
-            bat "powershell -Command \"Invoke-RestMethod -Uri '${webhook}' -Method Post -ContentType 'application/json' -Body '${jsonStr}'\""
+            bat """
+                powershell -Command "Invoke-RestMethod -Uri '${webhook}' -Method Post -ContentType 'application/json' -InFile '${tempFile}'"
+                del ${tempFile}
+            """
         }
         echo "Slack notification sent: ${status}"
     } catch (Exception e) {
