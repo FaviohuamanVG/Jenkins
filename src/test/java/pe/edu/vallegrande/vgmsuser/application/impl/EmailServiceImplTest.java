@@ -62,7 +62,7 @@ class EmailServiceImplTest {
         String toEmail = "juan.perez@vallegrande.edu.pe";
         String username = "Juan Pérez";
         String temporaryPassword = "TempPass123!";
-        String resetToken = "reset-token-123";
+        String resetToken = "rst-" + java.util.UUID.randomUUID().toString().substring(0, 12);
         
         String expectedHtmlContent = "<html><body>Email de credenciales temporales mock</body></html>";
 
@@ -89,7 +89,7 @@ class EmailServiceImplTest {
         // Given
         String toEmail = "maria.lopez@vallegrande.edu.pe";
         String username = "María López";
-        String resetToken = "reset-token-456";
+        String resetToken = "rst-" + java.util.UUID.randomUUID().toString().substring(0, 12);
         
         String expectedHtmlContent = "<html><body>Email de reset de contraseña mock</body></html>";
 
@@ -167,7 +167,7 @@ class EmailServiceImplTest {
 
         // When & Then
         StepVerifier.create(emailService.sendPasswordResetEmail(
-                "admin@vallegrande.edu.pe", "Administrator", "secure-token-456"))
+                "admin@vallegrande.edu.pe", "Administrator", "secure-rst-" + java.util.UUID.randomUUID().toString().substring(0, 8)))
                 .verifyComplete();
 
         // Verificar que se procesó y envió correctamente
@@ -199,7 +199,7 @@ class EmailServiceImplTest {
     @DisplayName("UT018: Debe construir URL de reset correctamente")
     void testSendPasswordResetEmail_CorrectResetUrl() {
         // Given
-        String resetToken = "special-token-789";
+        String resetToken = "special-rst-" + java.util.UUID.randomUUID().toString().substring(0, 8);
         String expectedResetUrl = FRONTEND_URL + "/reset-password?token=" + resetToken;
         
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);

@@ -41,8 +41,8 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     private KeycloakUserDto mockKeycloakUser;
-    private final String TEST_KEYCLOAK_ID = "test-keycloak-id-123";
-    private final String TEST_RESET_TOKEN = "test-reset-token-456";
+    private final String TEST_KEYCLOAK_ID = UUID.randomUUID().toString();
+    private final String TEST_RESET_TOKEN = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -102,27 +102,28 @@ class AuthServiceImplTest {
     @DisplayName("UT007: Debe generar token exitosamente para usuario válido adicional")
     void testGeneratePasswordResetToken_AnotherSuccessCase() {
         // Given - Usuario válido con datos diferentes
+        String anotherUserId = UUID.randomUUID().toString();
         KeycloakUserDto anotherUser = KeycloakUserDto.builder()
-                .keycloakId("another-user-id")
+                .keycloakId(anotherUserId)
                 .username("maria.rodriguez")
                 .email("maria.rodriguez@vallegrande.edu.pe")
                 .build();
         
-        when(keycloakService.getUserByKeycloakId("another-user-id"))
+        when(keycloakService.getUserByKeycloakId(anotherUserId))
                 .thenReturn(Mono.just(anotherUser));
-        when(keycloakService.updatePasswordResetToken(eq("another-user-id"), anyString()))
+        when(keycloakService.updatePasswordResetToken(eq(anotherUserId), anyString()))
                 .thenReturn(Mono.empty());
         when(emailService.sendPasswordResetEmail(anyString(), anyString(), anyString()))
                 .thenReturn(Mono.empty());
 
         // When & Then
-        StepVerifier.create(authService.generatePasswordResetToken("another-user-id"))
+        StepVerifier.create(authService.generatePasswordResetToken(anotherUserId))
                 .expectNextMatches(token -> token != null && !token.isEmpty())
                 .verifyComplete();
 
         // Verificar interacciones exitosas
-        verify(keycloakService, times(1)).getUserByKeycloakId("another-user-id");
-        verify(keycloakService, times(1)).updatePasswordResetToken(eq("another-user-id"), anyString());
+        verify(keycloakService, times(1)).getUserByKeycloakId(anotherUserId);
+        verify(keycloakService, times(1)).updatePasswordResetToken(eq(anotherUserId), anyString());
         verify(emailService, times(1)).sendPasswordResetEmail(
                 eq(anotherUser.getEmail()),
                 eq(anotherUser.getUsername()),
@@ -144,11 +145,14 @@ class AuthServiceImplTest {
                 .thenReturn(Mono.empty());
 
         // When & Then - Generar múltiples tokens
-        StepVerifier.create(authService.generatePasswordResetToken("user1"))
+        String userId1 = UUID.randomUUID().toString();
+        String userId2 = UUID.randomUUID().toString();
+        
+        StepVerifier.create(authService.generatePasswordResetToken(userId1))
                 .expectNextMatches(token -> token != null && !token.isEmpty())
                 .verifyComplete();
 
-        StepVerifier.create(authService.generatePasswordResetToken("user2"))
+        StepVerifier.create(authService.generatePasswordResetToken(userId2))
                 .expectNextMatches(token -> token != null && !token.isEmpty())
                 .verifyComplete();
 
@@ -161,11 +165,12 @@ class AuthServiceImplTest {
     @DisplayName("UT009: Debe resetear contraseña exitosamente con token válido")
     void testResetPassword_Success() {
         // Given - Configurar mocks
-        String validToken = "valid-reset-token-789";
+        String validToken = UUID.randomUUID().toString();
         String newPassword = "NewSecurePassword123!";
+        String userTokenId = UUID.randomUUID().toString();
         
         KeycloakUserDto userWithToken = KeycloakUserDto.builder()
-                .keycloakId("user-with-token-id")
+                .keycloakId(userTokenId)
                 .username("user.with.token")
                 .email("user.with.token@vallegrande.edu.pe")
                 .passwordResetToken(validToken)
@@ -175,13 +180,13 @@ class AuthServiceImplTest {
         when(keycloakService.getAllUsersWithAttributes())
                 .thenReturn(Flux.just(userWithToken));
         
-        when(keycloakService.changePassword(userWithToken.getKeycloakId(), newPassword))
+        when(keycloakService.changePassword(userTokenId, newPassword))
                 .thenReturn(Mono.empty());
         
-        when(keycloakService.updatePasswordStatus(eq(userWithToken.getKeycloakId()), anyString(), anyString()))
+        when(keycloakService.updatePasswordStatus(eq(userTokenId), anyString(), anyString()))
                 .thenReturn(Mono.empty());
         
-        when(keycloakService.updatePasswordResetToken(userWithToken.getKeycloakId(), null))
+        when(keycloakService.updatePasswordResetToken(userTokenId, null))
                 .thenReturn(Mono.empty());
         
         when(emailService.sendPasswordChangeConfirmationEmail(anyString(), anyString()))
@@ -197,9 +202,9 @@ class AuthServiceImplTest {
 
         // Verificar interacciones
         verify(keycloakService, times(1)).getAllUsersWithAttributes();
-        verify(keycloakService, times(1)).changePassword(userWithToken.getKeycloakId(), newPassword);
-        verify(keycloakService, times(1)).updatePasswordStatus(eq(userWithToken.getKeycloakId()), anyString(), anyString());
-        verify(keycloakService, times(1)).updatePasswordResetToken(userWithToken.getKeycloakId(), null);
+        verify(keycloakService, times(1)).changePassword(userTokenId, newPassword);
+        verify(keycloakService, times(1)).updatePasswordStatus(eq(userTokenId), anyString(), anyString());
+        verify(keycloakService, times(1)).updatePasswordResetToken(userTokenId, null);
         verify(emailService, times(1)).sendPasswordChangeConfirmationEmail(
                 eq(userWithToken.getEmail()),
                 eq(userWithToken.getUsername())
@@ -210,13 +215,14 @@ class AuthServiceImplTest {
     @DisplayName("UT010: Debe fallar cuando el token de reset es inválido")
     void testResetPassword_InvalidToken() {
         // Given - Token inválido
-        String invalidToken = "invalid-token-123";
+        String invalidToken = UUID.randomUUID().toString();
         String newPassword = "NewPassword123!";
+        String otherUserId = UUID.randomUUID().toString();
         
         KeycloakUserDto userWithDifferentToken = KeycloakUserDto.builder()
-                .keycloakId("other-user-id")
+                .keycloakId(otherUserId)
                 .username("other.user")
-                .passwordResetToken("different-token-456")
+                .passwordResetToken(UUID.randomUUID().toString())
                 .build();
 
         when(keycloakService.getAllUsersWithAttributes())
@@ -240,11 +246,12 @@ class AuthServiceImplTest {
     @DisplayName("UT011: Debe manejar error al cambiar contraseña en Keycloak")
     void testResetPassword_KeycloakPasswordChangeFailure() {
         // Given - Cambio de contraseña falla en Keycloak
-        String validToken = "valid-token-111";
+        String validToken = UUID.randomUUID().toString();
         String newPassword = "NewPassword123!";
+        String userFailId = UUID.randomUUID().toString();
         
         KeycloakUserDto userWithToken = KeycloakUserDto.builder()
-                .keycloakId("user-password-fail-id")
+                .keycloakId(userFailId)
                 .username("user.password.fail")
                 .email("user.fail@vallegrande.edu.pe")
                 .passwordResetToken(validToken)
@@ -253,7 +260,7 @@ class AuthServiceImplTest {
         when(keycloakService.getAllUsersWithAttributes())
                 .thenReturn(Flux.just(userWithToken));
         
-        when(keycloakService.changePassword(userWithToken.getKeycloakId(), newPassword))
+        when(keycloakService.changePassword(userFailId, newPassword))
                 .thenReturn(Mono.error(new RuntimeException("Keycloak password policy violation")));
 
         // When & Then

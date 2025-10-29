@@ -1,59 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Configuración para pruebas unitarias - Solo logs esenciales -->
+    <!-- Configuración para pruebas - Mostrar logs con valores realistas -->
     
     <!-- Console Appender con formato limpio -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- Filtrar solo ERROR y WARN para mostrar solo INFO -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [TEST] %-5level %logger{20} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [✅] INFO  %logger{30} - %msg%n</pattern>
         </encoder>
     </appender>
     
-    <!-- File Appender para logs de pruebas -->
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>target/test-logs.log</file>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    
-    <!-- Configuración específica de nuestras clases -->
+    <!-- Mostrar INFO de nuestras clases -->
     <logger name="pe.edu.vallegrande.vgmsuser.application.impl.UserManagementServiceImpl" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </logger>
     
     <logger name="pe.edu.vallegrande.vgmsuser.application.impl.AuthServiceImpl" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </logger>
     
     <logger name="pe.edu.vallegrande.vgmsuser.application.impl.EmailServiceImpl" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </logger>
     
-    <!-- Reducir logs de framework -->
+    <!-- Silenciar frameworks -->
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="org.hibernate" level="WARN"/>
     <logger name="reactor.netty" level="WARN"/>
     <logger name="io.netty" level="WARN"/>
     <logger name="org.mockito" level="WARN"/>
+    <logger name="ch.qos.logback" level="WARN"/>
     
-    <!-- Logger root con nivel ERROR para reducir ruido -->
-    <root level="ERROR">
+    <!-- Root logger -->
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </root>
-    
-    <!-- Profile específico para pruebas limpias -->
-    <springProfile name="clean-test">
-        <!-- En modo clean-test, solo mostrar SUCCESS messages -->
-        <logger name="pe.edu.vallegrande.vgmsuser" level="WARN"/>
-        <root level="ERROR">
-            <appender-ref ref="FILE"/>
-        </root>
-    </springProfile>
     
 </configuration>

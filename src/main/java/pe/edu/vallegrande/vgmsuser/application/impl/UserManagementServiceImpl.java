@@ -76,7 +76,7 @@ public class UserManagementServiceImpl implements IUserManagementService {
                         return keycloakService.getUserByKeycloakId(keycloakId)
                                 .flatMap(keycloakUser -> {
                                     // Actualizar atributos incluyendo el reset token
-                                    return updatePasswordResetToken(keycloakId, resetToken)
+                                    return keycloakService.updatePasswordResetToken(keycloakId, resetToken)
                                             .then(Mono.defer(() -> {
                                                 // Enviar correo con credenciales temporales
                                                 log.info("Preparing to send temporary credentials email to: {}", user.getEmail());
