@@ -1,0 +1,53 @@
+# Configuración de logging para pruebas unitarias
+# Solo mostrar mensajes informativos y evitar errores de simulación
+
+logging:
+  level:
+    root: INFO
+    
+    # Nuestras clases - Nivel INFO para ver el flujo
+    pe.edu.vallegrande.vgmsuser.application.impl: INFO
+    
+    # Reducir logs de Spring/Framework
+    org.springframework: WARN
+    org.apache: WARN
+    org.hibernate: WARN
+    reactor.netty: WARN
+    io.netty: WARN
+    
+    # Logging específico para pruebas
+    org.junit: INFO
+    org.mockito: WARN
+    
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n"
+    
+  # Configurar appenders
+  appender:
+    console:
+      encoder:
+        pattern: "%d{HH:mm:ss.SSS} [TEST] %-5level %logger{36} - %msg%n"
+
+# Configuración específica para pruebas
+spring:
+  profiles:
+    active: test
+  
+  # Desactivar banners y startup logs innecesarios
+  main:
+    banner-mode: "off"
+    log-startup-info: false
+    
+  # Configuración de mail para pruebas (mock)
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        debug: false
+        transport:
+          protocol: smtp
+        smtp:
+          auth: false
+          starttls:
+            enable: false
