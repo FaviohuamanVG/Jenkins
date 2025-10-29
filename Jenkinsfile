@@ -403,8 +403,8 @@ pipeline {
                         // No cambiar el result para mantener SUCCESS
                     }
                     
-                    // Slack notifications disabled
-                    echo "Quality Gate Check completed - Slack disabled"
+                    // Notify Quality Gate (optional - less important)
+                    echo "Quality Gate Check completed"
                 }
             }
         }
