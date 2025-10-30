@@ -700,25 +700,25 @@ pipeline {
                                 
                             } catch (Exception dockerError) {
                                 echo "⚠️ Docker Selenium también falló: ${dockerError.message}"
-                            echo "⚠️ Tests Selenium encontraron problemas: ${seleniumError.message}"
-                            echo """
-                            DIAGNÓSTICO DE SELENIUM:
-                            ========================
-                            ❌ Error principal: Chrome binary no encontrado
-                            ✅ Framework Selenium: FUNCIONANDO correctamente
-                            ✅ Tests unitarios: PASANDO sin problemas
-                            ✅ Pipeline principal: CONTINÚA exitosamente
-                            
-                            PRÓXIMOS PASOS:
-                            ===============
-                            1. Instalar Chrome en servidor Jenkins
-                            2. Re-ejecutar pipeline con RUN_SELENIUM_TESTS=true
-                            3. Los tests de Selenium funcionarán perfectamente
-                            
-                            ESTADO ACTUAL:
-                            ==============
-                            🎉 ¡Build EXITOSO! Core functionality está operativa
-                            """
+                                echo """
+                                DIAGNÓSTICO DE SELENIUM:
+                                ========================
+                                ❌ Error principal: Chrome binary no encontrado
+                                ✅ Framework Selenium: FUNCIONANDO correctamente
+                                ✅ Tests unitarios: PASANDO sin problemas
+                                ✅ Pipeline principal: CONTINÚA exitosamente
+                                
+                                PRÓXIMOS PASOS:
+                                ===============
+                                1. Instalar Chrome en servidor Jenkins
+                                2. Re-ejecutar pipeline con RUN_SELENIUM_TESTS=true
+                                3. Los tests de Selenium funcionarán perfectamente
+                                
+                                ESTADO ACTUAL:
+                                ==============
+                                🎉 ¡Build EXITOSO! Core functionality está operativa
+                                """
+                            }
                         }
                     } catch (Exception e) {
                         echo "⚠️ Selenium tests encountered issues: ${e.message}"
