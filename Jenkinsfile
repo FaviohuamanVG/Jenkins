@@ -8,15 +8,15 @@ pipeline {
     }
     
     environment {
-        JAVA_HOME = tool name: 'Java17', type: 'jdk'
-        MAVEN_HOME = tool name: 'Maven3', type: 'maven'
+        JAVA_HOME = tool name: 'JDK-17', type: 'jdk'
+        MAVEN_HOME = tool name: 'Maven-3.9', type: 'maven'
         PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${env.PATH}"
         SLACK_UTILS_LOADED = 'false'
     }
     
     tools {
-        jdk 'Java17'
-        maven 'Maven3'
+        jdk 'JDK-17'
+        maven 'Maven-3.9'
     }
     
     stages {
