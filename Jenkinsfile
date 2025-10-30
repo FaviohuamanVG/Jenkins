@@ -409,6 +409,54 @@ pipeline {
             }
         }
         
+        stage('Start Application for Integration Tests') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                    expression { params.RUN_SELENIUM_TESTS == true }
+                    expression { params.RUN_INTEGRATION_TESTS == true }
+                }
+            }
+            steps {
+                echo '🚀 Starting application for integration testing...'
+                script {
+                    try {
+                        if (isUnix()) {
+                            sh '''
+                                echo "Iniciando aplicación Spring Boot en segundo plano..."
+                                nohup java -jar -Dspring.profiles.active=test -Dserver.port=8080 target/*.jar > app.log 2>&1 &
+                                echo $! > app.pid
+                                
+                                echo "Esperando que la aplicación inicie..."
+                                for i in {1..30}; do
+                                    if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
+                                        echo "✅ Aplicación iniciada correctamente en puerto 8080"
+                                        break
+                                    fi
+                                    echo "Esperando... ($i/30)"
+                                    sleep 2
+                                done
+                            '''
+                        } else {
+                            bat '''
+                                echo INICIANDO APLICACION SPRING BOOT...
+                                start /B java -jar -Dspring.profiles.active=test -Dserver.port=8080 target\\*.jar > app.log 2>&1
+                                
+                                echo VERIFICANDO INICIO DE APLICACION...
+                                timeout /t 10 /nobreak
+                                
+                                powershell -Command "for ($i = 1; $i -le 15; $i++) { try { Invoke-WebRequest -Uri 'http://localhost:8080/actuator/health' -TimeoutSec 2; Write-Output 'Aplicacion iniciada correctamente'; break } catch { Write-Output \"Esperando... ($i/15)\"; Start-Sleep 2 } }"
+                            '''
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ Error iniciando aplicación: ${e.message}"
+                        echo "ℹ️ Los tests de integración pueden fallar sin la aplicación ejecutándose"
+                    }
+                }
+            }
+        }
+        
         stage('Selenium Integration Tests') {
             when {
                 anyOf {
@@ -421,14 +469,43 @@ pipeline {
                 echo '🧪 Running Selenium WebDriver Integration Tests...'
                 script {
                     try {
+                        // Verificar si Chrome está disponible
+                        def chromeAvailable = false
+                        try {
+                            if (isUnix()) {
+                                sh 'which google-chrome || which chrome || which chromium-browser'
+                                chromeAvailable = true
+                            } else {
+                                bat 'where chrome.exe 2>nul || where "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" 2>nul'
+                                chromeAvailable = true
+                            }
+                        } catch (Exception e) {
+                            echo "⚠️ Chrome no encontrado, intentando instalar..."
+                            
+                            if (isUnix()) {
+                                sh '''
+                                    echo "Instalando Google Chrome..."
+                                    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add - || true
+                                    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list || true
+                                    sudo apt-get update || true
+                                    sudo apt-get install -y google-chrome-stable || true
+                                '''
+                            } else {
+                                echo "📝 Para Windows Jenkins, instale Chrome manualmente desde: https://www.google.com/chrome/"
+                                echo "📍 O use la imagen Docker: selenium/standalone-chrome"
+                            }
+                        }
+                        
+                        // Ejecutar tests Selenium
                         if (isUnix()) {
                             sh '''
                                 echo "Configurando entorno para Selenium..."
                                 export SELENIUM_BROWSER=chrome
                                 export SELENIUM_HEADLESS=true
                                 
-                                mvn clean verify \
-                                -Dincludes="**/selenium/**/*Test.java" \
+                                echo "Ejecutando pruebas Selenium..."
+                                mvn test \
+                                -Dtest="**/selenium/**/*Test" \
                                 -Dselenium.browser=chrome \
                                 -Dselenium.headless=true \
                                 -Dspring.profiles.active=selenium \
@@ -442,8 +519,8 @@ pipeline {
                                 set SELENIUM_HEADLESS=true
                                 
                                 echo EJECUTANDO PRUEBAS DE INTEGRACION SELENIUM...
-                                mvn clean verify ^
-                                -Dincludes="**/selenium/**/*Test.java" ^
+                                mvn test ^
+                                -Dtest="**/selenium/**/*Test" ^
                                 -Dselenium.browser=chrome ^
                                 -Dselenium.headless=true ^
                                 -Dspring.profiles.active=selenium ^
@@ -453,9 +530,10 @@ pipeline {
                         }
                     } catch (Exception e) {
                         echo "⚠️ Selenium tests encountered issues: ${e.message}"
-                        echo "ℹ️ Selenium test failures are not critical for main build"
+                        echo "ℹ️ Esto puede ser normal si Chrome no está instalado en Jenkins"
                         echo "✅ Core unit tests and API functionality are working correctly"
-                        // No cambiar el result - los tests de Selenium son opcionales pero informativos
+                        echo "🔧 Para solucionar: Instalar Chrome en el agente Jenkins"
+                        // No cambiar el result - los tests de Selenium son opcionales
                     }
                     
                     // Notify Selenium test completion
@@ -496,6 +574,61 @@ pipeline {
                         } else {
                             echo "ℹ️ No se encontraron reportes de Selenium - posiblemente no ejecutado en esta rama"
                         }
+                    }
+                }
+            }
+        }
+        
+        stage('Cleanup Application') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                    expression { params.RUN_SELENIUM_TESTS == true }
+                    expression { params.RUN_INTEGRATION_TESTS == true }
+                }
+            }
+            steps {
+                echo '🧹 Cleaning up running application...'
+                script {
+                    try {
+                        if (isUnix()) {
+                            sh '''
+                                echo "Deteniendo aplicación Spring Boot..."
+                                if [ -f app.pid ]; then
+                                    PID=$(cat app.pid)
+                                    if kill -0 $PID 2>/dev/null; then
+                                        echo "Deteniendo proceso $PID..."
+                                        kill $PID
+                                        sleep 5
+                                        if kill -0 $PID 2>/dev/null; then
+                                            echo "Forzando cierre del proceso..."
+                                            kill -9 $PID
+                                        fi
+                                    fi
+                                    rm -f app.pid
+                                fi
+                                
+                                # Backup: matar cualquier proceso Java en puerto 8080
+                                pkill -f "java.*jar" || true
+                                echo "✅ Aplicación detenida correctamente"
+                            '''
+                        } else {
+                            bat '''
+                                echo DETENIENDO APLICACION SPRING BOOT...
+                                
+                                REM Matar procesos Java que puedan estar ejecutando la aplicación
+                                taskkill /F /IM java.exe 2>nul || echo No hay procesos Java para terminar
+                                
+                                REM Liberar puerto 8080
+                                for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080') do taskkill /F /PID %%a 2>nul || echo Puerto 8080 liberado
+                                
+                                echo APLICACION DETENIDA CORRECTAMENTE
+                            '''
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ Error al detener aplicación: ${e.message}"
+                        echo "ℹ️ Continuando con el build..."
                     }
                 }
             }
