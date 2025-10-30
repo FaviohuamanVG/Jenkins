@@ -1,0 +1,48 @@
+# Configuración de pruebas Selenium para vg-ms-user-microservice
+# Profile de pruebas específico para Selenium WebDriver
+
+# Configuración del servidor de pruebas (usando puerto aleatorio)
+server.port=0
+
+# Configuración de logging más detallada para pruebas
+logging.level.pe.edu.vallegrande.vgmsuser=DEBUG
+logging.level.org.springframework.web=DEBUG
+logging.level.reactor.netty=INFO
+logging.pattern.console=%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+
+# Configuración de base de datos en memoria para pruebas (si aplica)
+# spring.datasource.url=jdbc:h2:mem:testdb
+# spring.datasource.driver-class-name=org.h2.Driver
+# spring.jpa.hibernate.ddl-auto=create-drop
+
+# Configuración de Keycloak para pruebas (mock o servidor de pruebas)
+keycloak.auth-server-url=http://localhost:8180/auth
+keycloak.realm=test-realm
+keycloak.resource=vg-users-microservice
+keycloak.credentials.secret=test-secret
+keycloak.use-resource-role-mappings=true
+keycloak.bearer-only=true
+
+# Configuración de correo para pruebas (mock)
+spring.mail.host=localhost
+spring.mail.port=1025
+spring.mail.username=test
+spring.mail.password=test
+spring.mail.properties.mail.smtp.auth=false
+spring.mail.properties.mail.smtp.starttls.enable=false
+
+# Configuración específica para pruebas
+spring.test.context.cache.maxSize=100
+
+# Configuración de timeouts para pruebas
+spring.webflux.timeout=30s
+spring.cloud.loadbalancer.ribbon.enabled=false
+
+# Configuración de Actuator para pruebas
+management.endpoints.web.exposure.include=health,info,metrics
+management.endpoint.health.show-details=always
+
+# Configuración de CORS permisiva para pruebas
+cors.allowed-origins=*
+cors.allowed-methods=GET,POST,PUT,DELETE,OPTIONS
+cors.allowed-headers=*
