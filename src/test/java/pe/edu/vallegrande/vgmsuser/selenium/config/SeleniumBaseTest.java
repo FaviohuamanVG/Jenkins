@@ -10,7 +10,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.net.URL;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
@@ -53,6 +56,9 @@ public abstract class SeleniumBaseTest {
                 break;
             case "edge":
                 setupEdgeDriver();
+                break;
+            case "remote-chrome":
+                setupRemoteChromeDriver();
                 break;
             default:
                 log.warn("Navegador '{}' no soportado, usando Chrome por defecto", browser);
@@ -127,6 +133,38 @@ public abstract class SeleniumBaseTest {
             }
         }
         log.info("EdgeDriver configurado exitosamente");
+    }
+    
+    private static void setupRemoteChromeDriver() {
+        String hubUrl = System.getProperty("selenium.hub.url", "http://localhost:4444/wd/hub");
+        
+        ChromeOptions options = new ChromeOptions();
+        
+        if (HEADLESS_MODE) {
+            options.addArguments("--headless");
+        }
+        
+        // Configuraciones adicionales para Docker Selenium
+        options.addArguments(
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--window-size=1920,1080",
+            "--disable-extensions",
+            "--disable-infobars",
+            "--disable-notifications",
+            "--disable-web-security",
+            "--allow-running-insecure-content"
+        );
+        
+        try {
+            URL hubURL = new URL(hubUrl);
+            driver = new RemoteWebDriver(hubURL, options);
+            log.info("RemoteWebDriver configurado exitosamente con Selenium Grid en: {}", hubUrl);
+        } catch (Exception e) {
+            log.error("Error al inicializar RemoteWebDriver: {}", e.getMessage());
+            throw new RuntimeException("No se pudo conectar a Selenium Grid en: " + hubUrl, e);
+        }
     }
     
     @BeforeEach
