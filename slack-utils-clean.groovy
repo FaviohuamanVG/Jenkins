@@ -84,7 +84,8 @@ def sendSlackNotification(String status, String message = null) {
             """
         } else {
             bat """
-                powershell -Command "Invoke-RestMethod -Uri '${webhook}' -Method Post -ContentType 'application/json' -InFile '${tempFile}'"
+                set WEBHOOK_URL=${webhook}
+                powershell -Command "Invoke-RestMethod -Uri '%WEBHOOK_URL%' -Method Post -ContentType 'application/json' -InFile '${tempFile}'"
                 del ${tempFile}
             """
         }
